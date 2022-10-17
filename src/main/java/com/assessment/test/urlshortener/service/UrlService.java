@@ -1,7 +1,9 @@
 package com.assessment.test.urlshortener.service;
 
 import com.assessment.test.urlshortener.dto.UrlRequest;
+import com.assessment.test.urlshortener.entity.Click;
 import com.assessment.test.urlshortener.entity.Url;
+import com.assessment.test.urlshortener.repository.ClickRepository;
 import com.assessment.test.urlshortener.repository.UrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ public class UrlService {
     private UrlRepository urlRepository;
     @Autowired
     private BaseEncryptor encryptor;
+    @Autowired
+    private ClickRepository clickRepository;
 
     public String convertToShortUrl(UrlRequest request) {
         Optional<Url> optionalUrl = urlRepository.findByLongUrlAndExpiresDateIsLessThan(request.getLongUrl(), LocalDateTime.now());
@@ -36,7 +40,7 @@ public class UrlService {
         return encryptor.encode(entity.getId());
     }
 
-    public String getOriginalUrl(String shortUrl) {
+    public String getOriginalUrl(String shortUrl, String ip) {
         Long id = encryptor.decode(shortUrl);
         Url entity = urlRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("There is no entity with " + shortUrl));
@@ -44,6 +48,13 @@ public class UrlService {
         if ( Objects.nonNull(entity.getExpiresDate()) && entity.getExpiresDate().isBefore(LocalDateTime.now())){
             urlRepository.delete(entity);
             throw new EntityNotFoundException("Link expired!");
+        }
+
+        if(!clickRepository.existsByUrl_LongUrlAndIpAddress(entity.getLongUrl(), ip)){
+            Click click = new Click();
+            click.setUrl(entity);
+            click.setIpAddress(ip);
+            clickRepository.save(click);
         }
 
         return entity.getLongUrl();

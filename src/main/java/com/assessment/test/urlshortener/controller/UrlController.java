@@ -36,9 +36,9 @@ public class UrlController {
     @ApiOperation(value = "Redirect", notes = "Finds original url from short url and redirects")
     @GetMapping(value = "{shortUrl}")
     @Cacheable(value = "urls", key = "#shortUrl", sync = true)
-    public ResponseEntity<Void> getAndRedirect(@PathVariable String shortUrl) {
+    public ResponseEntity<Void> getAndRedirect(@PathVariable String shortUrl, HttpServletRequest httpServletRequest) {
         try {
-            String url = urlService.getOriginalUrl(shortUrl);
+            String url = urlService.getOriginalUrl(shortUrl, httpServletRequest.getRemoteAddr());
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(url))
                     .build();
