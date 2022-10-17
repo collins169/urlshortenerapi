@@ -19,7 +19,7 @@ public class UrlController {
     private UrlService urlService;
 
     @ApiOperation(value = "Convert new url", notes = "Converts long url to short url")
-    @PostMapping(value = "create-short", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public String convertToShortUrl(@RequestBody UrlRequest request) {
         return urlService.convertToShortUrl(request);
     }
