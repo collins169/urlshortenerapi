@@ -2,21 +2,40 @@ version: '3'
 
 services:
 
-  mysql-local:
-    image: mysql:8.0
+  PostgreSQL:
+    image: postgres:13.1-alpine
     environment:
-      - MYSQL_DATABASE=shortener
-      - MYSQL_ROOT_PASSWORD=root
+      - POSTGRES_DB=urlshortener
+      - POSTGRES_USER=urlshortener
+      - POSTGRES_PASSWORD=urlshortenerpassword
+    networks:
+      - springpostgres-net
     ports:
-      - "3306:3306"
+      - "5432:5432"
+    expose:
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   url-shortener-app:
     build:
       context: .
       dockerfile: Dockerfile
     image: andela/url-shortener
+    networks:
+      - springpostgres-net
     restart: on-failure
     depends_on:
-      - mysql-local
+      - PostgreSQL
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://PostgreSQL:5432/urlshortener
+      - SPRING_DATASOURCE_USERNAME=urlshortener
+      - SPRING_DATASOURCE_PASSWORD=urlshortenerpassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     ports:
       - "8080:8080"
+networks:
+  springpostgres-net:
