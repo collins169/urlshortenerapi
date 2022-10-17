@@ -7,8 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class UrlService {
@@ -19,6 +23,10 @@ public class UrlService {
     private BaseEncryptor encryptor;
 
     public String convertToShortUrl(UrlRequest request) {
+        Optional<Url> optionalUrl = urlRepository.findByLongUrlAndExpiresDateIsLessThan(request.getLongUrl(), LocalDateTime.now());
+        if(optionalUrl.isPresent()){
+            return encryptor.encode(optionalUrl.get().getId());
+        }
         Url url = new Url();
         url.setLongUrl(request.getLongUrl());
         url.setExpiresDate(request.getExpiresDate());
@@ -39,5 +47,23 @@ public class UrlService {
         }
 
         return entity.getLongUrl();
+    }
+
+    public boolean isValidUrl(String url){
+        try {
+            // it will check only for scheme and not null input
+            new URL(url);
+            return true;
+        } catch (MalformedURLException e) {
+            return false;
+        }
+    }
+
+    public String getBaseUrl(HttpServletRequest req) {
+        return ""
+                + req.getScheme() + "://"
+                + req.getServerName()
+                + ":" + req.getServerPort()
+                + req.getContextPath();
     }
 }
